@@ -1,9 +1,9 @@
 #%% 
 import psycopg2
-from sqlalchemy import create_engine
 import pandas as pd
+from sqlalchemy import create_engine
 from sqlalchemy import inspect
-
+from sqlalchemy import text
 DATABASE_TYPE = 'postgresql'
 DBAPI = 'psycopg2'
 HOST = 'localhost'
@@ -12,19 +12,19 @@ PASSWORD = 'Jenkins09'
 DATABASE = 'Pagila'
 PORT = 5436
 engine = create_engine(f"{DATABASE_TYPE}+{DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
-
-#method 1 
-with psycopg2.connect(host='localhost', user='postgres', password='Jenkins09', dbname='Pagila', port=5436) as conn:
-    with conn.cursor() as cur:
-        cur.execute("SELECT * FROM actor")
-        for table in cur.fetchall():
-            print(table)
-#method 2 
-engine.connect()
+with engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
+    conn.execute("SELECT * FROM actor")
+#inspector object is a wrapper around the database, it allows us to retrieve info about the tables and columns inside the database
 inspector = inspect(engine)
 inspector.get_table_names()
-#find workaround later. Bye 14:38 27/01/2024
-# with engine.connect() as connection:
-#    result = connection.execute("SELECT * FROM actor")
-#    for row in result:
-#       print(row) 
+#'ORM in SQLAlchemy: create a table in database and insert data: use pandas. Read tables using pandas and the engine'
+actors = pd.read_sql_table('actor', engine)
+actors.head(10)
+
+#%%
+with engine.connect() as connection:
+    result = connection.execute(text("SELECT * FROM actor"))
+    for row in result:
+        print(row)
+with engine.execution_options(isolation_level='AUTOCOMMIT').connect() as conn:
+    
